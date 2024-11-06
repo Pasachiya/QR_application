@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Welcome Display</title>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <style>
+        /* General styling */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #73a5ff, #5477f5);
+            font-family: Arial, sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        #welcome-message {
+            font-size: 3em;
+            font-weight: bold;
+            color: #fff;
+            padding: 20px 40px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.8);
+            animation: fadeInScale 0.8s ease-in-out forwards;
+        }
+
+        /* Animations */
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Animation when new messages appear */
+        .new-message {
+            animation: slideIn 0.6s ease forwards;
+        }
+
+        /* Glow effect */
+        #welcome-message.glow {
+            box-shadow: 0px 0px 20px 5px rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="welcome-message">Waiting for guests...</div>
+    <script>
+        const socket = io('http://localhost:5000');
+        
+        // Function to add the glow effect
+        function addGlowEffect() {
+            const welcomeMessage = document.getElementById('welcome-message');
+            welcomeMessage.classList.add('glow', 'new-message');
+            
+            // Remove 'new-message' after animation completes
+            setTimeout(() => {
+                welcomeMessage.classList.remove('new-message');
+            }, 600);
+        }
+
+        socket.on('welcome_message', function(msg) {
+            const welcomeMessage = document.getElementById('welcome-message');
+            welcomeMessage.innerText = msg;
+            addGlowEffect();
+        });
+    </script>
+</body>
+</html>
