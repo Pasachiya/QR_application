@@ -1,53 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Entrance Screen</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f2f2f2;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrance Screen</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
 
-    .container {
-      background-color: white;
-      padding: 2rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      width: 80%;
-      max-width: 600px;
-    }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 80%;
+            max-width: 600px;
+        }
 
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 1.5rem;
-    }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
 
-    #welcome-message {
-      font-size: 1.8rem;
-      font-weight: bold;
-      margin-top: 1.5rem;
-    }
-  </style>
+        #welcome-message {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-top: 1.5rem;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Entrance Screen</h1>
-    <div id="welcome-message"></div>
-  </div>
+    <div class="container">
+        <h1>Entrance Screen</h1>
+        <div id="welcome-message">Waiting for guests...</div>
+    </div>
+    <script>
+        const socket = io('http://localhost:5000');
 
-  <script>
-    var socket = io.connect('http://localhost:5000'); // Replace with your backend URL
+        socket.on('connect', () => {
+            console.log('Connected to Socket.IO server');
+        });
 
-    socket.on('welcome_message', function(message) {
-      document.getElementById('welcome-message').textContent = message;
-    });
-  </script>
+        socket.on('welcome_message', (message) => {
+            console.log('Received welcome_message:', message);
+            document.getElementById('welcome-message').textContent = message;
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from Socket.IO server');
+        });
+    </script>
 </body>
 </html>

@@ -9,6 +9,7 @@ from typing import Optional, Tuple
 import logging
 import os
 import pymssql
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -60,6 +61,19 @@ def get_user_data_from_db(user_id: str) -> Optional[Tuple]:
         logging.error(f"Database error in get_user_data_from_db: {e}")
         return None
 
+# Record attendance in the database
+def record_attendance(user_id: str, event_id: str):
+    try:
+        with get_db_cursor() as cursor:
+            timestamp = datetime.now()
+            query = "INSERT INTO attendance (user_id, event_id, timestamp) VALUES (%s, %s, %s)"
+            cursor.execute(query, (user_id, event_id, timestamp))
+            logging.info(f"Attendance recorded for user_id: {user_id}, event_id: {event_id}, timestamp: {timestamp}")
+    except pymssql.Error as e:
+        logging.error(f"Database error in record_attendance: {e}")
+    except Exception as e:
+        logging.error(f"Unexpected error in record_attendance: {e}")
+
 # Socket event to handle user scan
 @socketio.on('scan_user')
 def handle_scan_user(user_id: str):
@@ -69,6 +83,8 @@ def handle_scan_user(user_id: str):
             message = f"Welcome {user_data[0]}"
             logging.info(f"Emitting welcome_message: {message}")
             socketio.emit('welcome_message', message)
+            # Record attendance
+            record_attendance(user_id, "event_id_placeholder")  # Replace with actual event_id
         else:
             logging.warning(f"User not found for user_id: {user_id}")
             socketio.emit('welcome_message', "User not found")
@@ -166,21 +182,53 @@ def test_scan_user():
     logging.info(f"Scan event triggered successfully for user_id: {user_id}")
     return jsonify({'message': 'Scan event triggered successfully'}), 200
 
-# New endpoint to emit scan_user event
-@app.route('/emit_scan_user', methods=['POST'])
-def emit_scan_user():
+# New endpoint to simulate scan_user event
+@app.route('/simulate_scan_user', methods=['POST'])
+def simulate_scan_user():
     data = request.get_json()
     user_id = data.get('user_id')
     
     if not user_id:
         return jsonify({'error': 'User ID is required'}), 400
 
-    socketio.emit('scan_user', user_id)
-    logging.info(f"scan_user event emitted successfully for user_id: {user_id}")
-    return jsonify({'message': 'Scan user event emitted successfully'}), 200
+    # Manually call the handle_scan_user function
+    handle_scan_user(user_id)
+    return jsonify({'message': 'Scan user event simulated successfully'}), 200
+
+# API endpoint to receive user ID from Postman
+@app.route('/receive_user_id', methods=['POST'])
+def receive_user_id():
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'User ID is required'}), 400
+
+        # Store the user ID in a temporary location (e.g., a global variable or a file)
+        global current_user_id
+        current_user_id = user_id
+        logging.info(f"Received user_id: {user_id}")
+        return jsonify({'message': 'User ID received successfully'}), 200
+
+    except Exception as e:
+        logging.error(f"Error in receive_user_id: {e}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
+
+# Endpoint to get the current user ID
+@app.route('/get_current_user_id', methods=['GET'])
+def get_current_user_id():
+    try:
+        global current_user_id
+        if current_user_id:
+            return jsonify({'user_id': current_user_id}), 200
+        return jsonify({'error': 'No user ID available'}), 404
+    except Exception as e:
+        logging.error(f"Error in get_current_user_id: {e}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
+    current_user_id = None  # Initialize the global variable
 
     # Check database connection
     try:
